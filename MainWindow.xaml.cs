@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -35,10 +36,10 @@ namespace sea_boy
     public partial class MainWindow : Window
     {
         internal Presenter presenter = new Presenter();
-        public ShipCounter shipCounter1x1 { get; set; } = new ShipCounter(Presenter.ShipLimit);
-        public ShipCounter shipCounter1x2 { get; set; } = new ShipCounter(Presenter.ShipLimit);
-        public ShipCounter shipCounter1x3 { get; set; } = new ShipCounter(Presenter.ShipLimit);
-        public ShipCounter shipCounter1x4 { get; set; } = new ShipCounter(Presenter.ShipLimit);
+        public ShipCounter shipCounter1x1 { get; set; } = new ShipCounter(4);
+        public ShipCounter shipCounter1x2 { get; set; } = new ShipCounter(3);
+        public ShipCounter shipCounter1x3 { get; set; } = new ShipCounter(2);
+        public ShipCounter shipCounter1x4 { get; set; } = new ShipCounter(1);
         private Rectangle? possibleShip;
         private Rectangle?[,] boardList = new Rectangle[Presenter.rows, Presenter.columns];
         private bool boardMouseHandled = false;
@@ -247,6 +248,13 @@ namespace sea_boy
                 return;
             ShowPossibleShip();
             MovePossibleShip(row, column);
+            UpdatePossibleShipColor(row, column);
+        }
+
+        private void UpdatePossibleShipColor(int row, int column)
+        {
+            if (presenter.currentShip == null || possibleShip == null)
+                return;
             if (!presenter.DoNotIntersectAndValidPosition(boardList, presenter.currentShip, row, column))
             {
                 possibleShip.Fill = Constants.invalidPossibleShipColor;
@@ -327,10 +335,13 @@ namespace sea_boy
                 var _heigth = possibleShip.Height;
                 possibleShip.Height = possibleShip.Width;
                 possibleShip.Width = _heigth;
+                var row = Grid.GetRow(possibleShip);
+                var column = Grid.GetColumn(possibleShip);
                 var rowSpan = Grid.GetRowSpan(possibleShip);
                 var columnSpan = Grid.GetColumnSpan(possibleShip);
                 Grid.SetColumnSpan(possibleShip, rowSpan);
                 Grid.SetRowSpan(possibleShip, columnSpan);
+                UpdatePossibleShipColor(row, column);
             }
         }
     }

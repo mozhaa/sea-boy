@@ -30,16 +30,19 @@ namespace sea_boy
             }
         }
 
+        public int ShipLimit;
+
         public string Label 
         { 
             get 
             { 
-                return Number.ToString() + "/" + Presenter.ShipLimit.ToString(); 
+                return Number.ToString() + "/" + ShipLimit.ToString(); 
             } 
         }
-        public ShipCounter(int number)
+        public ShipCounter(int shipLimit)
         {
-            Number = number;
+            Number = shipLimit;
+            ShipLimit = shipLimit;
         }
     }
 }
