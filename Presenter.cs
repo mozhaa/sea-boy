@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Shapes;
 
 namespace sea_boy
@@ -17,6 +18,15 @@ namespace sea_boy
         public readonly static int columns = 10;
         public readonly static int ShipLimit = 3;
         public BattleShip? currentShip;
+        public static Dictionary<ShipType, (int, int)> sizeByType = new()
+        {
+            { ShipType.s1x1, (1, 1) },
+            { ShipType.s1x2, (1, 2) },
+            { ShipType.s1x3, (1, 3) },
+            { ShipType.s1x4, (1, 4) }
+        };
+
+        public static Dictionary<(int, int), ShipType> typeBySize = sizeByType.ToDictionary(x => x.Value, x => x.Key);
 
         public void SetCurrentShip(int width, int height)
         {

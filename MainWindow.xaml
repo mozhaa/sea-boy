@@ -15,11 +15,12 @@
             <ColumnDefinition></ColumnDefinition>
             <ColumnDefinition Width="Auto"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <Border Width="{x:Static local:Constants.gridWidth}" Height="{x:Static local:Constants.gridHeigth}" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Black" Margin="42, 0, 0, 0">
+        <Border Width="{x:Static local:Constants.gridWidth}" Height="{x:Static local:Constants.gridHeight}" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Black" Margin="42, 0, 0, 0">
             <Grid x:Name="Board" MouseDown="Board_MouseDown" ShowGridLines="True" Background="{x:Static local:Constants.boardBackgroundColor}"/>
         </Border>
         <Grid x:Name="Buttons" Grid.Row="0" Grid.Column="1" Margin="0, 0, 20, 0" VerticalAlignment="Center">
             <Grid.RowDefinitions>
+                <RowDefinition Height="80"></RowDefinition>
                 <RowDefinition Height="80"></RowDefinition>
                 <RowDefinition Height="80"></RowDefinition>
                 <RowDefinition Height="80"></RowDefinition>
@@ -115,6 +116,7 @@
                     <Label Content="{Binding Path=shipCounter1x4.Label, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
                 </StackPanel>
             </Button>
+            <Button x:Name="SaveButton" IsEnabled="False" Click="SaveButton_Click" Grid.Row="4" Grid.Column="0" Height="50" Content="Сохранить" FontFamily="Trebuchet MS" FontSize="20"></Button>
         </Grid>
     </Grid>
 </Window>
