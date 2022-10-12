@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,8 +14,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Point = System.Windows.Point;
+using Rectangle = System.Windows.Shapes.Rectangle;
 
 namespace sea_boy
 {
@@ -35,19 +39,22 @@ namespace sea_boy
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IGameView
     {
-        internal Presenter presenter = new Presenter();
+        internal Presenter presenter;
         public ShipCounter shipCounter1x1 { get; set; } = new ShipCounter(4);
         public ShipCounter shipCounter1x2 { get; set; } = new ShipCounter(3);
         public ShipCounter shipCounter1x3 { get; set; } = new ShipCounter(2);
         public ShipCounter shipCounter1x4 { get; set; } = new ShipCounter(1);
+
         public Dictionary<ShipType, ShipCounter> shipCounterByType;
         private Rectangle? possibleShip;
-        private Rectangle?[,] boardList = new Rectangle[Presenter.rows, Presenter.columns];
-        private bool boardMouseHandled = false;
+        private Rectangle?[,] board = new Rectangle[Presenter.rows, Presenter.columns];
+        public BattleShip?[,] boardArray = new BattleShip[Presenter.rows, Presenter.columns];
+        private bool boardMouseMoveWheelHandled = false;
         public MainWindow()
         {
+            presenter = new Presenter(this);
             InitializeComponent();
 
             shipCounterByType = new()
@@ -74,54 +81,59 @@ namespace sea_boy
         {
             if (shipCounter1x1.Number > 0)
             {
-                presenter.SetCurrentShip(1, 1);
+                presenter.SetCurrentShip(1, 1, 0, 0);
                 SetPossibleShip(1, 1);
-                HandleMouseOnBoardIfNotAlready();
+                HandleMouseMoveWheelOnBoardIfNotAlready();
             }
         }
         public void Button1x2Click(object sender, RoutedEventArgs e)
         {
             if (shipCounter1x2.Number > 0)
             {
-                presenter.SetCurrentShip(1, 2);
+                presenter.SetCurrentShip(1, 2, 0, 0);
                 SetPossibleShip(1, 2);
-                HandleMouseOnBoardIfNotAlready();
+                HandleMouseMoveWheelOnBoardIfNotAlready();
             }
         }
         public void Button1x3Click(object sender, RoutedEventArgs e)
         {
             if (shipCounter1x3.Number > 0)
             {
-                presenter.SetCurrentShip(1, 3);
+                presenter.SetCurrentShip(1, 3, 0, 0);
                 SetPossibleShip(1, 3);
-                HandleMouseOnBoardIfNotAlready();
+                HandleMouseMoveWheelOnBoardIfNotAlready();
             }
         }
         public void Button1x4Click(object sender, RoutedEventArgs e)
         {
             if (shipCounter1x4.Number > 0)
             {
-                presenter.SetCurrentShip(1, 4);
+                presenter.SetCurrentShip(1, 4, 0, 0);
                 SetPossibleShip(1, 4);
-                HandleMouseOnBoardIfNotAlready();
+                HandleMouseMoveWheelOnBoardIfNotAlready();
             }
         }
 
-        private void HandleMouseOnBoardIfNotAlready()
+        private void HandleMouseMoveWheelOnBoardIfNotAlready()
         {
-            if (!boardMouseHandled)
+            if (!boardMouseMoveWheelHandled)
             {
                 Board.MouseMove += Board_MouseMoveEvent;
                 Board.MouseWheel += Board_MouseWheelEvent;
-                boardMouseHandled = true;
+                boardMouseMoveWheelHandled = true;
             }
+        }
+
+        private void UnHandleMouseMoveWheelFromBoard()
+        {
+            Board.MouseMove -= Board_MouseMoveEvent;
+            Board.MouseWheel -= Board_MouseWheelEvent;
+            boardMouseMoveWheelHandled = false;
         }
 
         private void UnHandleMouseFromBoard()
         {
-            Board.MouseMove -= Board_MouseMoveEvent;
-            Board.MouseWheel -= Board_MouseWheelEvent;
-            boardMouseHandled = false;
+            Board.MouseDown -= Board_MouseDown;
         }
 
         private int GetRowByPoint(Point clickedOn)
@@ -175,7 +187,7 @@ namespace sea_boy
             }
             else
             {
-                if (e.ChangedButton == MouseButton.Left && presenter.DoNotIntersectAndValidPosition(boardList, presenter.currentShip!, row, column))
+                if (e.ChangedButton == MouseButton.Left && presenter.DoNotIntersectAndValidPosition(board, presenter.currentShip!, row, column))
                 {
                     PutBattleShipOnBoard(presenter.currentShip, row, column);
                 }
@@ -188,7 +200,7 @@ namespace sea_boy
 
         public void PickBattleShipFromBoard(int row, int column)
         {
-            var shipRectangle = boardList[row, column];
+            var shipRectangle = board[row, column];
             if (shipRectangle == null)
                 return;
             int width = Grid.GetColumnSpan(shipRectangle);
@@ -197,15 +209,15 @@ namespace sea_boy
             int elemColumn = Grid.GetColumn(shipRectangle);
             FillBoardListWithRectangle(null, elemRow, elemColumn, height, width);
             Board.Children.Remove(shipRectangle);
-            IncreaseShipCounter(new BattleShip(width, height));
-            presenter.SetCurrentShip(width, height);
+            IncreaseShipCounter(Presenter.typeBySize[(width, height)]);
+            presenter.SetCurrentShip(width, height, row, column);
             SetPossibleShip(width, height);
-            HandleMouseOnBoardIfNotAlready();
+            HandleMouseMoveWheelOnBoardIfNotAlready();
         }
 
         public void RemoveBattleShipFromBoard(int row, int column)
         {
-            var shipRectangle = boardList[row, column];
+            var shipRectangle = board[row, column];
             if (shipRectangle == null)
                 return;
             int width = Grid.GetColumnSpan(shipRectangle);
@@ -214,13 +226,14 @@ namespace sea_boy
             int elemColumn = Grid.GetColumn(shipRectangle);
             FillBoardListWithRectangle(null, elemRow, elemColumn, height, width);
             Board.Children.Remove(shipRectangle);
-            IncreaseShipCounter(new BattleShip(width, height));
+            IncreaseShipCounter(Presenter.typeBySize[(width, height)]);
         }
 
         public void PutBattleShipOnBoard(BattleShip battleShip, int row, int column)
         {
             var shipRectangle = DrawBattleShip(battleShip, row, column, Constants.battleshipColor, 1.0);
             FillBoardListWithRectangle(shipRectangle, row, column, battleShip.Height, battleShip.Width);
+            FillBoardArrayWithBattleShip(battleShip, row, column);
             DecreaseShipCounter(battleShip);
             PutAwayShipFromHand();
         }
@@ -230,17 +243,21 @@ namespace sea_boy
             Board.Children.Remove(possibleShip);
             possibleShip = null;
             presenter.currentShip = null;
-            UnHandleMouseFromBoard();
+            UnHandleMouseMoveWheelFromBoard();
         }
 
         private void FillBoardListWithRectangle(Rectangle? rectangle, int row, int column, int height, int width)
-        {
-            // boardList.Where((line, index) => index >= row && index < row + height).
-            boardList[row, column] = rectangle;
+        { 
             for (int i = 0; i < height; i++)
                 for (int j = 0; j < width; j++)
-                    if (!(i == 0 && j == 0))
-                        boardList[row + i, column + j] = rectangle;
+                       board[row + i, column + j] = rectangle;
+        }
+
+        private void FillBoardArrayWithBattleShip(BattleShip battleShip, int row, int column)
+        {
+            for (int i = 0; i < battleShip.Height; i++)
+                for (int j = 0; j < battleShip.Width; j++)
+                    boardArray[row + i, column + j] = battleShip;
         }
 
         private Rectangle DrawBattleShip(BattleShip battleShip, int? row, int? column, Brush fill, double opacity)
@@ -273,6 +290,7 @@ namespace sea_boy
             int column = GetColumnByPoint(clickedOn);
             if (presenter.currentShip == null || possibleShip == null)
                 return;
+            presenter.MoveCurrentShip(row, column);
             ShowPossibleShip();
             MovePossibleShip(row, column);
             UpdatePossibleShipColor(row, column);
@@ -283,7 +301,7 @@ namespace sea_boy
             if (presenter.currentShip == null || possibleShip == null)
                 // Log
                 return;
-            if (!presenter.DoNotIntersectAndValidPosition(boardList, presenter.currentShip, row, column))
+            if (!presenter.DoNotIntersectAndValidPosition(board, presenter.currentShip, row, column))
                 possibleShip.Fill = Constants.invalidPossibleShipColor;
             else
                 possibleShip.Fill = Constants.possibleShipColor;
@@ -328,12 +346,23 @@ namespace sea_boy
             OnCounterModified();
         }
 
+        private void DecreaseShipCounter(ShipType type)
+        {
+            shipCounterByType[type].Number--;
+            OnCounterModified();
+        }
+
+        private void IncreaseShipCounter(ShipType type)
+        {
+            shipCounterByType[type].Number++;
+            OnCounterModified();
+        }
+
         public void Board_MouseWheelEvent(object sender, RoutedEventArgs e)
         {
             if (presenter.currentShip != null && possibleShip != null)
             {
                 presenter.currentShip.Rotate();
-                // rotate Rectangle possibleShip
                 var height = possibleShip.Height;
                 possibleShip.Height = possibleShip.Width;
                 possibleShip.Width = height;
@@ -379,6 +408,10 @@ namespace sea_boy
             Buttons.Visibility = Visibility.Collapsed;
             BoardOpponent_Border.Visibility = Visibility.Visible;
             Width = 1200;
+            presenter.StartGame(boardArray);
+            UnHandleMouseFromBoard();
+            if (possibleShip != null)
+                HidePossibleShip();
 
         }
 

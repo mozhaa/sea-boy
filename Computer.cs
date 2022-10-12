@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -24,7 +25,7 @@ namespace sea_boy
     internal class Computer
     {
 
-        private Cell[,] board;
+        public Cell[,] board;
         private Random random = new Random();
 
         public Computer()
@@ -48,7 +49,7 @@ namespace sea_boy
             return (row, col);
         }
 
-        public void TellResult(int row, int column, Outcome result)
+        public void TellResult(int row, int column, Outcome result, int width=1, int height=1)
         {
             switch (result)
             {
@@ -57,13 +58,19 @@ namespace sea_boy
                 case Outcome.Hit:
                     board[row, column] = Cell.Hit; break;
                 case Outcome.Kill:
-                    board[row, column] = Cell.Kill; break;
+                    for (int i = row; i < height + row; i++)
+                        for (int j = column; j < width + column; j++)
+                            board[i, j] = Cell.Kill;
+                    break;
             }
         }
 
-        public BattleShip[,] GenerateBoard()
+        public BattleShip?[,] GenerateBoard()
         {
-            var newBoard = new BattleShip[Presenter.rows, Presenter.columns];
+            var newBoard = new BattleShip?[Presenter.rows, Presenter.columns];
+            for (int i = 0; i < Presenter.rows; i++)
+                for (int j = 0; j < Presenter.columns; j++)
+                    newBoard[i, j] = null;
             var types = new ShipType[] { ShipType.s1x4, ShipType.s1x3, ShipType.s1x2, ShipType.s1x1 };
             for (int i = 0; i < 4; i++)
             {
@@ -78,14 +85,14 @@ namespace sea_boy
                         bool orientation = random.Next(3) % 2 == 0;
                         row = random.Next(Presenter.rows);
                         column = random.Next(Presenter.columns);
-                        battleShip = new BattleShip(shipType);
+                        battleShip = new BattleShip(shipType, row, column);
                         if (orientation)
                             battleShip.Rotate();
                         if(Presenter.DoNotIntersectAndValidPositionByArray(newBoard, battleShip, row, column))
                             break;
                     }
-                    for (int w = row; w < battleShip.Width + row; w++)
-                        for (int h = column; h < battleShip.Height + column; h++)
+                    for (int w = row; w < battleShip.Height + row; w++)
+                        for (int h = column; h < battleShip.Width + column; h++)
                             newBoard[w, h] = battleShip;
                 }
             }

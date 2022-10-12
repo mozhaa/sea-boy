@@ -4,6 +4,7 @@ using System.ComponentModel.Design;
 using System.Drawing;
 using System.IO.Packaging;
 using System.Linq;
+using System.Printing;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,11 +18,12 @@ namespace sea_boy
         First,
         Second
     }
-    internal class Presenter
+    public class Presenter
     {
         public readonly static int rows = 10;
         public readonly static int columns = 10;
         public readonly static int ShipLimit = 3;
+        public IGameView view;
         public BattleShip? currentShip;
         public static Dictionary<ShipType, (int, int)> sizeByType = new()
         {
@@ -34,10 +36,24 @@ namespace sea_boy
         public static Dictionary<(int, int), ShipType> typeBySize = sizeByType.ToDictionary(x => x.Value, x => x.Key);
         public Player currentPlayer = Player.First;
         private Computer computer;
+        private BattleShip?[,] playerBoard;
+        private BattleShip[,] opponentBoard;
+        private Cell[,] opponentBoardPlayerView;
 
-        public void SetCurrentShip(int width, int height)
+        public Presenter(IGameView view)
         {
-            currentShip = new BattleShip(width, height);
+            this.view = view;
+        }
+
+        public void SetCurrentShip(int width, int height, int row, int column)
+        {
+            currentShip = new BattleShip(width, height, row, column);
+        }
+
+        public void MoveCurrentShip(int row, int column)
+        {
+            currentShip.Row = row;
+            currentShip.Column = column;
         }
 
         public static bool IsValidCoordinate(int row, int column)
@@ -45,41 +61,121 @@ namespace sea_boy
             return 0 <= row && row < rows && 0 <= column && column < columns;
         }
 
-        public bool IsValidShipPosition(int row, int column)
+        public bool IsValidCurrentShipPosition(int row, int column)
         {
             if (currentShip == null)
                 return false;
             return IsValidCoordinate(row, column) && IsValidCoordinate(row + currentShip.Height - 1, column + currentShip.Width - 1);
         }
 
-        public bool DoNotIntersectsWithOtherShips(System.Windows.Shapes.Rectangle?[,] boardList, BattleShip battleShip, int row, int column)
+        public static bool DoNotIntersectsWithOtherShips(System.Windows.Shapes.Rectangle?[,] boardList, BattleShip battleShip, int row, int column)
         {
             for (int i = -1; i <= battleShip.Height; i++)
-            {
                 for (int j = -1; j <= battleShip.Width; j++)
-                {
                     if (IsValidCoordinate(row + i, column + j) && boardList[row + i, column + j] != null)
-                    {
                         return false;
-                    }
-                }
-            }
             return true;
+        }
+
+        public static bool IsValidShipPosition(BattleShip battleShip, int row, int column)
+        {
+            return IsValidCoordinate(row, column) && IsValidCoordinate(row + battleShip.Height - 1, column + battleShip.Width - 1);
+        }
+
+        public static bool DoNotIntersectsWithOtherShipsByArray(BattleShip?[,] boardList, BattleShip battleShip, int row, int column)
+        {
+            for (int i = -1; i <= battleShip.Height; i++)
+                for (int j = -1; j <= battleShip.Width; j++)
+                    if (IsValidCoordinate(row + i, column + j) && boardList[row + i, column + j] != null)
+                        return false;
+            return true;
+        }
+
+        public static bool DoNotIntersectAndValidPositionByArray(BattleShip?[,] boardList, BattleShip battleShip, int row, int column)
+        {
+            return DoNotIntersectsWithOtherShipsByArray(boardList, battleShip, row, column) && IsValidShipPosition(battleShip, row, column);
         }
 
         public bool DoNotIntersectAndValidPosition(System.Windows.Shapes.Rectangle?[,] boardList, BattleShip battleShip, int row, int column)
         {
-            return DoNotIntersectsWithOtherShips(boardList, battleShip, row, column) && IsValidShipPosition(row, column);
+            return DoNotIntersectsWithOtherShips(boardList, battleShip, row, column) && IsValidCurrentShipPosition(row, column);
         }
 
-        public void StartGame()
+        private List<Cell> GetAllBattleShipState(BattleShip battleShip, Cell[,] board)
+        {
+            int row = battleShip.Row, column = battleShip.Column, width = battleShip.Width, height = battleShip.Height;
+            var result = new List<Cell>();
+            for (int i = row; i < height + row; i++)
+                for (int j = column; j < width + column; j++)
+                    result.Add(board[i, j]);
+            return result;
+        }
+
+        private bool IsShipDead(BattleShip battleShip, Cell[,] board)
+        {
+            foreach (var cell in GetAllBattleShipState(battleShip, board))
+                if (cell == Cell.Unknown)
+                    return false;
+            return true;
+        }
+
+        public void StartGame(BattleShip?[,] boardArray)
         {
             computer = new Computer();
+            opponentBoard = computer.GenerateBoard();
+            playerBoard = boardArray;
+            opponentBoardPlayerView = new Cell[rows, columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    opponentBoardPlayerView[i, j] = Cell.Unknown;
         }
 
-        public void ClickedOn(int row, int column)
+        public Cell ClickedOn(int row, int column)
         {
-            
+            if (opponentBoardPlayerView[row, column] != Cell.Unknown)
+                return Cell.Unknown;
+
+            if (opponentBoard[row, column] == null)
+            {
+                opponentBoardPlayerView[row, column] = Cell.Empty;
+                return Cell.Empty;
+            }
+
+            var battleShip = opponentBoard[row, column];
+            if (IsShipDead(battleShip, opponentBoardPlayerView))
+            {
+                for (int i = battleShip.Row; i < battleShip.Height + battleShip.Row; i++)
+                    for (int j = battleShip.Column; j < battleShip.Width + battleShip.Column; i++)
+                        opponentBoardPlayerView[i, j] = Cell.Kill;
+                return Cell.Kill;
+            }
+
+            opponentBoardPlayerView[row, column] = Cell.Hit;
+            return Cell.Hit;
+        }
+
+        private void SwitchPlayer()
+        {
+            currentPlayer = (currentPlayer == Player.First) ? Player.Second : Player.First;
+            MakeComputerMove();
+        }
+
+        private void MakeComputerMove()
+        {
+            while (true)
+            {
+                (int row, int column) = computer.AskMove();
+                var battleShip = playerBoard[row, column];
+                if (battleShip == null)
+                {
+                    computer.TellResult(row, column, Outcome.Miss);
+                    break;
+                }
+                if (IsShipDead(battleShip, computer.board))
+                    computer.TellResult(row, column, Outcome.Kill, battleShip.Width, battleShip.Height);
+                else
+                    computer.TellResult(row, column, Outcome.Hit);
+            }
         }
     }
 }
