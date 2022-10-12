@@ -18,6 +18,9 @@
         <Border Width="{x:Static local:Constants.gridWidth}" Height="{x:Static local:Constants.gridHeight}" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Black" Margin="42, 0, 0, 0">
             <Grid x:Name="Board" MouseDown="Board_MouseDown" ShowGridLines="True" Background="{x:Static local:Constants.boardBackgroundColor}"/>
         </Border>
+        <Border x:Name="BoardOpponent_Border" Width="{x:Static local:Constants.gridWidth}" Height="{x:Static local:Constants.gridHeight}" Grid.Row="0" Visibility="Collapsed" Grid.Column="1" HorizontalAlignment="Center" BorderThickness="1" BorderBrush="Black" Margin="0, 0, 42, 0">
+            <Grid x:Name="BoardOpponent" MouseDown="BoardOpponent_MouseDown" ShowGridLines="True" Background="{x:Static local:Constants.boardOpponentBackgroundColor}"/>
+        </Border>
         <Grid x:Name="Buttons" Grid.Row="0" Grid.Column="1" Margin="0, 0, 20, 0" VerticalAlignment="Center">
             <Grid.RowDefinitions>
                 <RowDefinition Height="80"></RowDefinition>

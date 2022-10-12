@@ -11,6 +11,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -20,6 +21,7 @@ namespace sea_boy
     public class Constants
     {
         public static Brush boardBackgroundColor = Brushes.AliceBlue;
+        public static Brush boardOpponentBackgroundColor = Brushes.LightGray;
         public static Brush battleshipColor = Brushes.Coral;
         public static Brush possibleShipColor = Brushes.LightSeaGreen;
         public static Brush invalidPossibleShipColor = Brushes.MediumVioletRed;
@@ -54,12 +56,18 @@ namespace sea_boy
                 { ShipType.s1x2, shipCounter1x2},
                 { ShipType.s1x3, shipCounter1x3},
                 { ShipType.s1x4, shipCounter1x4}
-            };  
+            };
 
+            InitializeBoard(Board);
+            InitializeBoard(BoardOpponent);
+        }
+
+        private void InitializeBoard(Grid BoardGrid)
+        {
             for (int i = 0; i < Presenter.rows; i++)
-                Board.RowDefinitions.Add(new RowDefinition() { SharedSizeGroup = "CELL" });
+                BoardGrid.RowDefinitions.Add(new RowDefinition() { SharedSizeGroup = "CELL" });
             for (int i = 0; i < Presenter.columns; i++)
-                Board.ColumnDefinitions.Add(new ColumnDefinition() { SharedSizeGroup = "CELL" });
+                BoardGrid.ColumnDefinitions.Add(new ColumnDefinition() { SharedSizeGroup = "CELL" });
         }
 
         public void Button1x1Click(object sender, RoutedEventArgs e)
@@ -134,11 +142,30 @@ namespace sea_boy
             return column;
         }
 
+        private int GetRowClickedOn(MouseButtonEventArgs e, Grid grid)
+        {
+            return GetRowByPoint(GetPointClickedOn(e, grid));
+        }
+
+        private int GetColumnClickedOn(MouseButtonEventArgs e, Grid grid)
+        {
+            return GetColumnByPoint(GetPointClickedOn(e, grid));
+        }
+
+        private (int, int) GetRowColumn(MouseButtonEventArgs e, Grid grid)
+        {
+            return (GetRowClickedOn(e, grid), GetColumnClickedOn(e, grid));
+        }
+
+        private Point GetPointClickedOn(MouseButtonEventArgs e, Grid BoardGrid)
+        {
+            return e.GetPosition(BoardGrid);
+        }
+
+
         public void Board_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Point clickedOn = e.GetPosition(Board);
-            int row = GetRowByPoint(clickedOn);
-            int column = GetColumnByPoint(clickedOn);
+            (int row, int column) = GetRowColumn(e, Board);
             if (possibleShip == null || presenter.currentShip == null)
             {
                 if (e.ChangedButton == MouseButton.Left)
@@ -150,7 +177,7 @@ namespace sea_boy
                     RemoveBattleShipFromBoard(row, column);
                 }
             }
-            else 
+            else
             {
                 if (e.ChangedButton == MouseButton.Left && presenter.DoNotIntersectAndValidPosition(boardList, presenter.currentShip!, row, column))
                 {
@@ -344,6 +371,24 @@ namespace sea_boy
         private void DeactivateSaveButton()
         {
             SaveButton.IsEnabled = false;
+        }
+
+        public void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchToPlayingMode();
+        }
+
+        private void SwitchToPlayingMode()
+        {
+            Buttons.Visibility = Visibility.Collapsed;
+            BoardOpponent_Border.Visibility = Visibility.Visible;
+            Width = 1200;
+
+        }
+
+        public void BoardOpponent_MouseDown(object sendet, MouseButtonEventArgs e)
+        {
+
         }
     }
 }
