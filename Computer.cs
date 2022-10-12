@@ -8,7 +8,7 @@ using System.Windows.Controls;
 
 namespace sea_boy
 {
-    public enum Cell
+    public enum CellState
     {
         Unknown,
         Empty,
@@ -25,15 +25,15 @@ namespace sea_boy
     internal class Computer
     {
 
-        public Cell[,] board;
+        public CellState[,] board;
         private Random random = new Random();
 
         public Computer()
         {
-            board = new Cell[Presenter.rows, Presenter.columns];
+            board = new CellState[Presenter.rows, Presenter.columns];
             for(int i = 0; i < Presenter.rows; i++)
                 for(int j = 0; j < Presenter.columns; j++)
-                    board[i, j] = Cell.Unknown;
+                    board[i, j] = CellState.Unknown;
         }
 
         public (int, int) AskMove()
@@ -43,7 +43,7 @@ namespace sea_boy
             {
                 row = random.Next(Presenter.rows);
                 col = random.Next(Presenter.columns);
-                if (board[row, col] == Cell.Unknown)
+                if (board[row, col] == CellState.Unknown)
                     break;
             }
             return (row, col);
@@ -54,13 +54,13 @@ namespace sea_boy
             switch (result)
             {
                 case Outcome.Miss:
-                    board[row, column] = Cell.Empty; break;
+                    board[row, column] = CellState.Empty; break;
                 case Outcome.Hit:
-                    board[row, column] = Cell.Hit; break;
+                    board[row, column] = CellState.Hit; break;
                 case Outcome.Kill:
                     for (int i = row; i < height + row; i++)
                         for (int j = column; j < width + column; j++)
-                            board[i, j] = Cell.Kill;
+                            board[i, j] = CellState.Kill;
                     break;
             }
         }

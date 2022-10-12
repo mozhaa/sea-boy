@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO.Packaging;
 using System.Linq;
@@ -38,7 +39,7 @@ namespace sea_boy
         private Computer computer;
         private BattleShip?[,] playerBoard;
         private BattleShip[,] opponentBoard;
-        private Cell[,] opponentBoardPlayerView;
+        private CellState[,] opponentBoardPlayerView;
 
         public Presenter(IGameView view)
         {
@@ -101,20 +102,20 @@ namespace sea_boy
             return DoNotIntersectsWithOtherShips(boardList, battleShip, row, column) && IsValidCurrentShipPosition(row, column);
         }
 
-        private List<Cell> GetAllBattleShipState(BattleShip battleShip, Cell[,] board)
+        private List<CellState> GetAllBattleShipState(BattleShip battleShip, CellState[,] board)
         {
             int row = battleShip.Row, column = battleShip.Column, width = battleShip.Width, height = battleShip.Height;
-            var result = new List<Cell>();
+            var result = new List<CellState>();
             for (int i = row; i < height + row; i++)
                 for (int j = column; j < width + column; j++)
                     result.Add(board[i, j]);
             return result;
         }
 
-        private bool IsShipDead(BattleShip battleShip, Cell[,] board)
+        private bool IsShipDead(BattleShip battleShip, CellState[,] board)
         {
             foreach (var cell in GetAllBattleShipState(battleShip, board))
-                if (cell == Cell.Unknown)
+                if (cell == CellState.Unknown)
                     return false;
             return true;
         }
@@ -124,21 +125,24 @@ namespace sea_boy
             computer = new Computer();
             opponentBoard = computer.GenerateBoard();
             playerBoard = boardArray;
-            opponentBoardPlayerView = new Cell[rows, columns];
+            opponentBoardPlayerView = new CellState[rows, columns];
             for (int i = 0; i < rows; i++)
                 for (int j = 0; j < columns; j++)
-                    opponentBoardPlayerView[i, j] = Cell.Unknown;
+                    opponentBoardPlayerView[i, j] = CellState.Unknown;
         }
 
-        public Cell ClickedOn(int row, int column)
+        public void ClickedOn(int row, int column)
         {
-            if (opponentBoardPlayerView[row, column] != Cell.Unknown)
-                return Cell.Unknown;
+            Trace.WriteLine("Player Clicked");
+            if (opponentBoardPlayerView[row, column] != CellState.Unknown)
+                return;
 
             if (opponentBoard[row, column] == null)
             {
-                opponentBoardPlayerView[row, column] = Cell.Empty;
-                return Cell.Empty;
+                opponentBoardPlayerView[row, column] = CellState.Empty;
+                view.PaintCellByState(row, column, CellState.Empty, Player.Second);
+                EndOfPlayerMove();
+                return;
             }
 
             var battleShip = opponentBoard[row, column];
@@ -146,18 +150,28 @@ namespace sea_boy
             {
                 for (int i = battleShip.Row; i < battleShip.Height + battleShip.Row; i++)
                     for (int j = battleShip.Column; j < battleShip.Width + battleShip.Column; i++)
-                        opponentBoardPlayerView[i, j] = Cell.Kill;
-                return Cell.Kill;
+                    {
+                        opponentBoardPlayerView[i, j] = CellState.Kill;
+                        view.PaintCellByState(i, j, CellState.Kill, Player.Second);
+                    }
+                return;
             }
 
-            opponentBoardPlayerView[row, column] = Cell.Hit;
-            return Cell.Hit;
+            opponentBoardPlayerView[row, column] = CellState.Hit;
+            view.PaintCellByState(row, column, CellState.Hit, Player.Second);
+            return;
         }
 
         private void SwitchPlayer()
         {
             currentPlayer = (currentPlayer == Player.First) ? Player.Second : Player.First;
+        }
+
+        private void EndOfPlayerMove()
+        {
+            SwitchPlayer();
             MakeComputerMove();
+            SwitchPlayer();
         }
 
         private void MakeComputerMove()
@@ -169,12 +183,21 @@ namespace sea_boy
                 if (battleShip == null)
                 {
                     computer.TellResult(row, column, Outcome.Miss);
+                    view.PaintCellByState(row, column, CellState.Empty, Player.First);
                     break;
                 }
                 if (IsShipDead(battleShip, computer.board))
+                {
                     computer.TellResult(row, column, Outcome.Kill, battleShip.Width, battleShip.Height);
+                    for (int i = battleShip.Row; i < battleShip.Row + battleShip.Height; i++)
+                        for (int j = battleShip.Column; j < battleShip.Column + battleShip.Width; j++)
+                            view.PaintCellByState(i, j, CellState.Kill, Player.First);
+                }
                 else
+                {
                     computer.TellResult(row, column, Outcome.Hit);
+                    view.PaintCellByState(row, column, CellState.Hit, Player.First);
+                }
             }
         }
     }

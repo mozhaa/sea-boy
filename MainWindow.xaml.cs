@@ -33,6 +33,25 @@ namespace sea_boy
         public static double gridHeight = 500;
         public static double tileHeight = gridHeight / Presenter.rows;
         public static double tileWidth = gridWidth / Presenter.columns;
+        public static Dictionary<CellState, Brush> BrushByStateOpponentBoard = new()
+        {
+            { CellState.Unknown, boardOpponentBackgroundColor },
+            { CellState.Empty, Brushes.White },
+            { CellState.Hit, Brushes.LightPink },
+            { CellState.Kill, Brushes.Crimson }
+        };
+        public static Dictionary<CellState, Brush> BrushByStatePlayerBoard = new()
+        {
+            { CellState.Unknown, boardBackgroundColor },
+            { CellState.Empty, Brushes.White },
+            { CellState.Hit, Brushes.PaleGreen },
+            { CellState.Kill, Brushes.SeaGreen }
+        };
+        public static Dictionary<Player, Dictionary<CellState, Brush>> PaletteByPlayer = new()
+        {
+            { Player.First, BrushByStatePlayerBoard },
+            { Player.Second, BrushByStateOpponentBoard }
+        };
 
     }
 
@@ -52,6 +71,9 @@ namespace sea_boy
         private Rectangle?[,] board = new Rectangle[Presenter.rows, Presenter.columns];
         public BattleShip?[,] boardArray = new BattleShip[Presenter.rows, Presenter.columns];
         private bool boardMouseMoveWheelHandled = false;
+        private Rectangle[,] playerCells = new Rectangle[Presenter.rows, Presenter.columns];
+        private Rectangle[,] opponentCells = new Rectangle[Presenter.rows, Presenter.columns];
+        private Dictionary<Player, Rectangle[,]> cellsByPlayer;
         public MainWindow()
         {
             presenter = new Presenter(this);
@@ -65,16 +87,35 @@ namespace sea_boy
                 { ShipType.s1x4, shipCounter1x4}
             };
 
-            InitializeBoard(Board);
-            InitializeBoard(BoardOpponent);
+            cellsByPlayer = new()
+            {
+                { Player.First, playerCells },
+                { Player.Second, opponentCells }
+            };
+
+            InitializeBoard(Board, playerCells, Player.First);
+            InitializeBoard(BoardOpponent, opponentCells, Player.Second);
         }
 
-        private void InitializeBoard(Grid BoardGrid)
+        private void InitializeBoard(Grid BoardGrid, Rectangle[,] cells, Player player)
         {
             for (int i = 0; i < Presenter.rows; i++)
                 BoardGrid.RowDefinitions.Add(new RowDefinition() { SharedSizeGroup = "CELL" });
             for (int i = 0; i < Presenter.columns; i++)
                 BoardGrid.ColumnDefinitions.Add(new ColumnDefinition() { SharedSizeGroup = "CELL" });
+            for (int i = 0; i < Presenter.rows; i++)
+                for (int j = 0; j < Presenter.columns; j++)
+                {
+                    cells[i, j] = new Rectangle()
+                    {
+                        Width = Constants.tileWidth,
+                        Height = Constants.tileHeight,
+                        Fill = Constants.PaletteByPlayer[player][CellState.Unknown]
+                    };
+                    Grid.SetRow(cells[i, j], i);
+                    Grid.SetColumn(cells[i, j], j);
+                    BoardGrid.Children.Add(cells[i, j]);
+                }
         }
 
         public void Button1x1Click(object sender, RoutedEventArgs e)
@@ -422,6 +463,17 @@ namespace sea_boy
                 (int row, int column) = GetRowColumn(e, BoardOpponent);
                 presenter.ClickedOn(row, column);
             }
+        }
+
+        public void PaintCellByState(int row, int column, CellState state, Player player)
+        {
+            PaintCell(row, column, Constants.PaletteByPlayer[player][state], player);
+        }
+
+        public void PaintCell(int row, int column, Brush brush, Player player)
+        {
+            var cells = cellsByPlayer[player];
+            cells[row, column].Fill = brush;
         }
     }
 }
