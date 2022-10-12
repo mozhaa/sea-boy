@@ -12,6 +12,11 @@ using System.Windows.Shapes;
 
 namespace sea_boy
 {
+    public enum Player
+    {
+        First,
+        Second
+    }
     internal class Presenter
     {
         public readonly static int rows = 10;
@@ -27,6 +32,8 @@ namespace sea_boy
         };
 
         public static Dictionary<(int, int), ShipType> typeBySize = sizeByType.ToDictionary(x => x.Value, x => x.Key);
+        public Player currentPlayer = Player.First;
+        private Computer computer;
 
         public void SetCurrentShip(int width, int height)
         {
@@ -63,6 +70,16 @@ namespace sea_boy
         public bool DoNotIntersectAndValidPosition(System.Windows.Shapes.Rectangle?[,] boardList, BattleShip battleShip, int row, int column)
         {
             return DoNotIntersectsWithOtherShips(boardList, battleShip, row, column) && IsValidShipPosition(row, column);
+        }
+
+        public void StartGame()
+        {
+            computer = new Computer();
+        }
+
+        public void ClickedOn(int row, int column)
+        {
+            
         }
     }
 }

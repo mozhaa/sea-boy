@@ -72,7 +72,6 @@ namespace sea_boy
 
         public void Button1x1Click(object sender, RoutedEventArgs e)
         {
-            Trace.WriteLine("Clicked 1x1");
             if (shipCounter1x1.Number > 0)
             {
                 presenter.SetCurrentShip(1, 1);
@@ -82,7 +81,6 @@ namespace sea_boy
         }
         public void Button1x2Click(object sender, RoutedEventArgs e)
         {
-            Trace.WriteLine("Clicked 1x2");
             if (shipCounter1x2.Number > 0)
             {
                 presenter.SetCurrentShip(1, 2);
@@ -92,7 +90,6 @@ namespace sea_boy
         }
         public void Button1x3Click(object sender, RoutedEventArgs e)
         {
-            Trace.WriteLine("Clicked 1x3");
             if (shipCounter1x3.Number > 0)
             {
                 presenter.SetCurrentShip(1, 3);
@@ -102,7 +99,6 @@ namespace sea_boy
         }
         public void Button1x4Click(object sender, RoutedEventArgs e)
         {
-            Trace.WriteLine("Clicked 1x4");
             if (shipCounter1x4.Number > 0)
             {
                 presenter.SetCurrentShip(1, 4);
@@ -388,7 +384,11 @@ namespace sea_boy
 
         public void BoardOpponent_MouseDown(object sendet, MouseButtonEventArgs e)
         {
-
+            if (presenter.currentPlayer == Player.First)
+            {
+                (int row, int column) = GetRowColumn(e, BoardOpponent);
+                presenter.ClickedOn(row, column);
+            }
         }
     }
 }
