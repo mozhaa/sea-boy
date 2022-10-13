@@ -127,13 +127,30 @@ namespace sea_boy
             };
         }
 
-        public void SetCross(int row, int column, string color="figure")
+        private Path Point(string color)
+        {
+            var centerX = (int)(Constants.tileWidth / 2);
+            var centerY = (int)(Constants.tileHeight / 2);
+            return new Path()
+            {
+                Data = Geometry.Parse($"M {centerX - 1},{centerY} L {centerX + 1},{centerY}"),
+                StrokeThickness = 8,
+                Stroke = Palette[color]
+            };
+        }
+
+        public void SetCross(int row, int column, string color = "cross")
         {
             Board[row, column].Figure = Cross(color);
         }
 
-        public void SetCircle(int row, int column, string color = "figure")
+        public void SetCircle(int row, int column, string color = "circle")
         {
             Board[row, column].Figure = Circle(color);
+        }
+
+        public void SetPoint(int row, int column, string color = "point")
+        {
+            Board[row, column].Figure = Point(color);
         }
 }
