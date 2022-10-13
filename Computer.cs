@@ -1,10 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.ExceptionServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 
 namespace sea_boy
 {
@@ -42,7 +37,7 @@ namespace sea_boy
             var indexes = new List<(int, int)>();
             for (int i = 0; i < Presenter.rows; i++)
                 for (int j = 0; j < Presenter.columns; j++)
-                    if (board[i, j] == CellState.Unknown
+                    if (board[i, j] == CellState.Unknown)
                         indexes.Add((i, j));
             int index = random.Next(indexes.Count);
             return indexes[index];
