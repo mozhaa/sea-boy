@@ -39,14 +39,13 @@ namespace sea_boy
         public (int, int) AskMove()
         {
             int row, col;
-            while (true)
-            {
-                row = random.Next(Presenter.rows);
-                col = random.Next(Presenter.columns);
-                if (board[row, col] == CellState.Unknown)
-                    break;
-            }
-            return (row, col);
+            var indexes = new List<(int, int)>();
+            for (int i = 0; i < Presenter.rows; i++)
+                for (int j = 0; j < Presenter.columns; j++)
+                    if (board[i, j] == CellState.Unknown
+                        indexes.Add((i, j));
+            int index = random.Next(indexes.Count);
+            return indexes[index];
         }
 
         public void TellResult(int row, int column, Outcome result, int width=1, int height=1)
