@@ -18,15 +18,22 @@ namespace sea_boy
         Hit,
         Kill
     }
+    public enum Mode
+    {
+        Easy,
+        Hard
+    }
     internal class Computer
     {
 
         public CellState[,] board;
         private Random random = new Random();
+        private Mode mode;
 
-        public Computer()
+        public Computer(Mode mode = Mode.Hard)
         {
             board = new CellState[Presenter.rows, Presenter.columns];
+            this.mode = mode;
             for(int i = 0; i < Presenter.rows; i++)
                 for(int j = 0; j < Presenter.columns; j++)
                     board[i, j] = CellState.Unknown;
@@ -34,6 +41,8 @@ namespace sea_boy
 
         public (int, int) AskMove()
         {
+            if (mode == Mode.Easy)
+                return RandomEasyMove();
             for (int i = 0; i < Presenter.rows; i++)
             {
                 for (int j = 0; j < Presenter.columns; j++)
@@ -53,6 +62,17 @@ namespace sea_boy
             for (int i = 0; i < Presenter.rows; i++)
                 for (int j = 0; j < Presenter.columns; j++)
                     if (board[i, j] == CellState.Unknown && AroundNoShips(i, j))
+                        indexes.Add((i, j));
+            int index = random.Next(indexes.Count);
+            return indexes[index];
+        }
+
+        private (int, int) RandomEasyMove()
+        {
+            var indexes = new List<(int, int)>();
+            for (int i = 0; i < Presenter.rows; i++)
+                for (int j = 0; j < Presenter.columns; j++)
+                    if (board[i, j] == CellState.Unknown)
                         indexes.Add((i, j));
             int index = random.Next(indexes.Count);
             return indexes[index];

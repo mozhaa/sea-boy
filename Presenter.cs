@@ -112,9 +112,9 @@ namespace sea_boy
             return true;
         }
 
-        public void StartGame(BattleShip?[,] boardArray)
+        public void StartGame(BattleShip?[,] boardArray, Mode mode)
         {
-            computer = new Computer();
+            computer = new Computer(mode);
             opponentBoard = computer.GenerateBoard();
             playerBoard = boardArray;
             opponentBoardPlayerView = new CellState[rows, columns];

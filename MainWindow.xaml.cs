@@ -409,7 +409,8 @@ namespace sea_boy
             BoardOpponent_Border.Visibility = Visibility.Visible;
             Width = 1200;
             ClearPlayerBoard();
-            presenter.StartGame(boardArray);
+            var mode = ModeCheckBox.IsChecked.Value ? Mode.Easy : Mode.Hard;
+            presenter.StartGame(boardArray, mode);
             UnHandleMouseFromBoard();
             if (possibleShip != null)
                 HidePossibleShip();

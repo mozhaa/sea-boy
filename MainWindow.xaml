@@ -28,6 +28,7 @@
                 <RowDefinition Height="80"></RowDefinition>
                 <RowDefinition Height="80"></RowDefinition>
                 <RowDefinition Height="80"></RowDefinition>
+                <RowDefinition Height="80"></RowDefinition>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>
@@ -119,7 +120,8 @@
                     <Label Content="{Binding Path=shipCounter1x4.Label, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
                 </StackPanel>
             </Button>
-            <Button x:Name="SaveButton" IsEnabled="False" Click="SaveButton_Click" Grid.Row="4" Grid.Column="0" Height="50" Content="Сохранить" FontFamily="Trebuchet MS" FontSize="20"></Button>
+            <Button x:Name="SaveButton" IsEnabled="False" Click="SaveButton_Click" Grid.Row="4" Grid.Column="0" Height="50" Content="Начать игру" FontFamily="Trebuchet MS" FontSize="20"></Button>
+            <CheckBox x:Name="ModeCheckBox" Content="Легкий уровень сложности" Grid.Row="5" Grid.Column="0"></CheckBox>
         </Grid>
         <Border x:Name="GameOverText_Board" Visibility="Hidden" BorderThickness="2" BorderBrush="Gray" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="GhostWhite" HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock x:Name="GameOverText" Margin="10, 10, 10, 10" Text="Игра окончена!" FontSize="50"/>
