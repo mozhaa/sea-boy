@@ -121,5 +121,8 @@
             </Button>
             <Button x:Name="SaveButton" IsEnabled="False" Click="SaveButton_Click" Grid.Row="4" Grid.Column="0" Height="50" Content="Сохранить" FontFamily="Trebuchet MS" FontSize="20"></Button>
         </Grid>
+        <Border x:Name="GameOverText_Board" Visibility="Hidden" BorderThickness="2" BorderBrush="Gray" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="GhostWhite" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock x:Name="GameOverText" Margin="10, 10, 10, 10" Text="Игра окончена!" FontSize="50"/>
+        </Border>
     </Grid>
 </Window>

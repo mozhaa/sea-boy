@@ -470,5 +470,17 @@ namespace sea_boy
                 }
             }
         }
+
+        private void UnhandleMouseFromOpponentBoard()
+        {
+            BoardOpponent.MouseDown -= BoardOpponent_MouseDown;
+        }
+
+        public void GameOver(Player winner)
+        {
+            UnhandleMouseFromOpponentBoard();
+            GameOverText.Text = (winner == Player.First) ? "Вы победили!" : "Вы проиграли!";
+            GameOverText_Board.Visibility = Visibility.Visible;
+        }
     }
 }

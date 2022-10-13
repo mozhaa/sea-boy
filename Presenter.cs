@@ -30,10 +30,12 @@ namespace sea_boy
         public BattleShip?[,] playerBoard;
         public BattleShip[,] opponentBoard;
         private CellState[,] opponentBoardPlayerView;
+        private bool isPlaying;
 
         public Presenter(IGameView view)
         {
             this.view = view;
+            isPlaying = true;
         }
 
         public void SetCurrentShip(int width, int height, int row, int column)
@@ -143,6 +145,11 @@ namespace sea_boy
                 for (int i = battleShip.Row; i < battleShip.Height + battleShip.Row; i++)
                     for (int j = battleShip.Column; j < battleShip.Width + battleShip.Column; j++)
                         opponentBoardPlayerView[i, j] = CellState.Kill;
+                if (AllShipsDead(opponentBoardPlayerView))
+                {
+                    view.GameOver(Player.First);
+                    GameOver();
+                }
                 return;
             }
 
@@ -157,6 +164,7 @@ namespace sea_boy
 
         private void EndOfPlayerMove()
         {
+            if (!isPlaying) { return; }
             SwitchPlayer();
             MakeComputerMove();
             SwitchPlayer();
@@ -180,8 +188,28 @@ namespace sea_boy
                 {
                     computer.TellResult(battleShip.Row, battleShip.Column, Outcome.Kill, battleShip.Width, battleShip.Height);
                     view.SetShipKilled(battleShip, Player.First);
+                    if (AllShipsDead(computer.board))
+                    {
+                        view.GameOver(Player.Second);
+                        GameOver();
+                    }
                 }
             }
+        }
+
+        private bool AllShipsDead(CellState[,] board)
+        {
+            int count = 0;
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    if (board[i, j] == CellState.Kill)
+                        count++;
+            return count == (1 * 4 + 2 * 3 + 3 * 2 + 4 * 1);
+        }
+
+        private void GameOver()
+        {
+            isPlaying = false;   
         }
     }
 }
