@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO.Packaging;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,31 +14,36 @@ namespace sea_boy
     {
         public static Brush boardBackgroundColor = Brushes.AliceBlue;
         public static Brush boardOpponentBackgroundColor = Brushes.LightGray;
-        public static Brush battleshipColor = Brushes.Coral;
+        public static Brush battleshipColor = Brushes.Aqua;
         public static Brush possibleShipColor = Brushes.LightSeaGreen;
         public static Brush invalidPossibleShipColor = Brushes.MediumVioletRed;
         public static double gridWidth = 500;
         public static double gridHeight = 500;
         public static double tileHeight = gridHeight / Presenter.rows;
         public static double tileWidth = gridWidth / Presenter.columns;
-        public static Dictionary<CellState, Brush> BrushByStateOpponentBoard = new()
+
+        public static Dictionary<string, Brush> playerPalette = new()
         {
-            { CellState.Unknown, Brushes.Transparent },
-            { CellState.Empty, Brushes.Gray },
-            { CellState.Hit, Brushes.PaleGreen },
-            { CellState.Kill, Brushes.SeaGreen }
+            { "background", boardBackgroundColor },
+            { "ship", battleshipColor },
+            { "cover", Brushes.Transparent },
+            { "point", Brushes.PapayaWhip },
+            { "circle", Brushes.MediumTurquoise },
+            { "cross", Brushes.SteelBlue }
         };
-        public static Dictionary<CellState, Brush> BrushByStatePlayerBoard = new()
+        public static Dictionary<string, Brush> opponentPalette = new()
         {
-            { CellState.Unknown, Brushes.Transparent },
-            { CellState.Empty, Brushes.LightGray },
-            { CellState.Hit, Brushes.LightPink },
-            { CellState.Kill, Brushes.Crimson }
+            { "background", Brushes.Lavender },
+            { "ship", Brushes.Violet },
+            { "cover", boardOpponentBackgroundColor },
+            { "point", Brushes.PeachPuff },
+            { "circle", Brushes.MediumOrchid },
+            { "cross", Brushes.MediumVioletRed }
         };
-        public static Dictionary<Player, Dictionary<CellState, Brush>> PaletteByPlayer = new()
+        public static Dictionary<Player, Dictionary<string, Brush>> PaletteByPlayer = new()
         {
-            { Player.First, BrushByStatePlayerBoard },
-            { Player.Second, BrushByStateOpponentBoard }
+            { Player.First, playerPalette },
+            { Player.Second, opponentPalette }
         };
 
     }
@@ -58,9 +64,9 @@ namespace sea_boy
         private Rectangle?[,] board = new Rectangle[Presenter.rows, Presenter.columns];
         public BattleShip?[,] boardArray = new BattleShip[Presenter.rows, Presenter.columns];
         private bool boardMouseMoveWheelHandled = false;
-        private Path[,] playerCells = new Path[Presenter.rows, Presenter.columns];
-        private Path[,] opponentCells = new Path[Presenter.rows, Presenter.columns];
-        private Dictionary<Player, Path[,]> cellsByPlayer;
+        private GameBoard playerBoard;
+        private GameBoard opponentBoard;
+        private Dictionary<Player, GameBoard> boardByPlayer;
         public MainWindow()
         {
             presenter = new Presenter(this);
@@ -74,42 +80,18 @@ namespace sea_boy
                 { ShipType.s1x4, shipCounter1x4}
             };
 
-            cellsByPlayer = new()
-            {
-                { Player.First, playerCells },
-                { Player.Second, opponentCells }
-            };
+            InitializeBoard(Board);
+            InitializeBoard(BoardOpponent);
 
-            InitializeBoard(Board, Player.First);
-            InitializeBoard(BoardOpponent, Player.Second);
+            
         }
 
-        private void InitializeBoard(Grid BoardGrid, Player player)
+        private void InitializeBoard(Grid BoardGrid)
         {
             for (int i = 0; i < Presenter.rows; i++)
                 BoardGrid.RowDefinitions.Add(new RowDefinition() { SharedSizeGroup = "CELL" });
             for (int i = 0; i < Presenter.columns; i++)
                 BoardGrid.ColumnDefinitions.Add(new ColumnDefinition() { SharedSizeGroup = "CELL" });
-        }
-
-        private void InitializeCrosses(Grid BoardGrid, Player player)
-        {
-            var cells = cellsByPlayer[player];
-            for (int i = 0; i < Presenter.rows; i++)
-                for (int j = 0; j < Presenter.columns; j++)
-                {
-                    cells[i, j] = new Path()
-                    {
-                        Width = Constants.tileWidth,
-                        Height = Constants.tileHeight,
-                        StrokeThickness = 4,
-                        Data = Geometry.Parse($"M0,0L{(int)Constants.tileHeight},{(int)Constants.tileWidth}M{(int)Constants.tileWidth},0L0,{(int)Constants.tileHeight}"),
-                        Stroke = Constants.PaletteByPlayer[player][CellState.Unknown]
-                    };
-                    Grid.SetRow(cells[i, j], i);
-                    Grid.SetColumn(cells[i, j], j);
-                    BoardGrid.Children.Add(cells[i, j]);
-                }
         }
 
         public void Button1x1Click(object sender, RoutedEventArgs e)
@@ -269,7 +251,7 @@ namespace sea_boy
             var shipRectangle = DrawBattleShip(battleShip, row, column, Constants.battleshipColor, 1.0);
             FillBoardListWithRectangle(shipRectangle, row, column, battleShip.Height, battleShip.Width);
             FillBoardArrayWithBattleShip(battleShip, row, column);
-            DecreaseShipCounter(battleShip);
+            DecreaseShipCounter(battleShip.Type);
             PutAwayShipFromHand();
         }
 
@@ -334,7 +316,6 @@ namespace sea_boy
         private void UpdatePossibleShipColor(int row, int column)
         {
             if (presenter.currentShip == null || possibleShip == null)
-                // Log
                 return;
             if (!presenter.DoNotIntersectAndValidPosition(board, presenter.currentShip, row, column))
                 possibleShip.Fill = Constants.invalidPossibleShipColor;
@@ -362,23 +343,8 @@ namespace sea_boy
         public void ShowPossibleShip()
         {
             if(possibleShip == null)
-            {
-                // Log
                 return;
-            }
             possibleShip.Visibility = Visibility.Visible;
-        }
-
-        private void DecreaseShipCounter(BattleShip battleShip)
-        {
-            shipCounterByType[battleShip.Type].Number--;
-            OnCounterModified();
-        }
-
-        private void IncreaseShipCounter(BattleShip battleShip)
-        {
-            shipCounterByType[battleShip.Type].Number++;
-            OnCounterModified();
         }
 
         private void DecreaseShipCounter(ShipType type)
@@ -443,13 +409,22 @@ namespace sea_boy
             Buttons.Visibility = Visibility.Collapsed;
             BoardOpponent_Border.Visibility = Visibility.Visible;
             Width = 1200;
-            InitializeCrosses(Board, Player.First);
-            InitializeCrosses(BoardOpponent, Player.Second);
+            ClearPlayerBoard();
             presenter.StartGame(boardArray);
             UnHandleMouseFromBoard();
             if (possibleShip != null)
                 HidePossibleShip();
 
+            playerBoard = new GameBoard(Board, Constants.PaletteByPlayer[Player.First]);
+            playerBoard.SetShips(boardArray);
+            opponentBoard = new GameBoard(BoardOpponent, Constants.PaletteByPlayer[Player.Second]);
+            opponentBoard.SetShips(presenter.opponentBoard);
+            
+            boardByPlayer = new()
+            {
+                { Player.First, playerBoard },
+                { Player.Second, opponentBoard }
+            };
         }
 
         public void BoardOpponent_MouseDown(object sendet, MouseButtonEventArgs e)
@@ -461,15 +436,40 @@ namespace sea_boy
             }
         }
 
-        public void PaintCellByState(int row, int column, CellState state, Player player)
+        private void ClearPlayerBoard()
         {
-            PaintCell(row, column, Constants.PaletteByPlayer[player][state], player);
+            Board.Children.Clear();
         }
 
-        public void PaintCell(int row, int column, Brush brush, Player player)
+        public void ChangeCellStackByState(int row, int column, CellState state, Player player)
         {
-            var cells = cellsByPlayer[player];
-            cells[row, column].Stroke = brush;
+            var board = boardByPlayer[player];
+            switch (state)
+            {
+                case CellState.Empty:
+                    board.UncoverCell(row, column);
+                    board.SetPoint(row, column);
+                    break;
+                case CellState.Hit:
+                    board.UncoverCell(row, column);
+                    board.SetCircle(row, column);
+                    break;
+                case CellState.Kill:
+                    board.UncoverCell(row, column);
+                    board.SetCross(row, column);
+                    break;
+            }
+        }
+
+        public void SetShipKilled(BattleShip battleShip, Player player)
+        {
+            for (int i = battleShip.Row; i < battleShip.Row + battleShip.Height; i++)
+            {
+                for (int j = battleShip.Column; j < battleShip.Column + battleShip.Width; j++)
+                {
+                    ChangeCellStackByState(i, j, CellState.Kill, player);
+                }
+            }
         }
     }
 }

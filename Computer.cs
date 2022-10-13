@@ -33,7 +33,6 @@ namespace sea_boy
 
         public (int, int) AskMove()
         {
-            int row, col;
             var indexes = new List<(int, int)>();
             for (int i = 0; i < Presenter.rows; i++)
                 for (int j = 0; j < Presenter.columns; j++)

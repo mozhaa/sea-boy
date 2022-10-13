@@ -27,8 +27,8 @@ namespace sea_boy
         public static Dictionary<(int, int), ShipType> typeBySize = sizeByType.ToDictionary(x => x.Value, x => x.Key);
         public Player currentPlayer = Player.First;
         private Computer computer;
-        private BattleShip?[,] playerBoard;
-        private BattleShip[,] opponentBoard;
+        public BattleShip?[,] playerBoard;
+        public BattleShip[,] opponentBoard;
         private CellState[,] opponentBoardPlayerView;
 
         public Presenter(IGameView view)
@@ -130,7 +130,7 @@ namespace sea_boy
             if (opponentBoard[row, column] == null)
             {
                 opponentBoardPlayerView[row, column] = CellState.Empty;
-                view.PaintCellByState(row, column, CellState.Empty, Player.Second);
+                view.ChangeCellStackByState(row, column, CellState.Empty, Player.Second);
                 EndOfPlayerMove();
                 return;
             }
@@ -139,16 +139,14 @@ namespace sea_boy
             opponentBoardPlayerView[row, column] = CellState.Hit;
             if (IsShipDead(battleShip, opponentBoardPlayerView))
             {
+                view.SetShipKilled(battleShip, Player.Second);
                 for (int i = battleShip.Row; i < battleShip.Height + battleShip.Row; i++)
                     for (int j = battleShip.Column; j < battleShip.Width + battleShip.Column; j++)
-                    {
                         opponentBoardPlayerView[i, j] = CellState.Kill;
-                        view.PaintCellByState(i, j, CellState.Kill, Player.Second);
-                    }
                 return;
             }
 
-            view.PaintCellByState(row, column, CellState.Hit, Player.Second);
+            view.ChangeCellStackByState(row, column, CellState.Hit, Player.Second);
             return;
         }
 
@@ -173,17 +171,15 @@ namespace sea_boy
                 if (battleShip == null)
                 {
                     computer.TellResult(row, column, Outcome.Miss);
-                    view.PaintCellByState(row, column, CellState.Empty, Player.First);
+                    view.ChangeCellStackByState(row, column, CellState.Empty, Player.First);
                     break;
                 }
-                view.PaintCellByState(row, column, CellState.Hit, Player.First);
+                view.ChangeCellStackByState(row, column, CellState.Hit, Player.First);
                 computer.TellResult(row, column, Outcome.Hit);
                 if (IsShipDead(battleShip, computer.board))
                 {
-                    computer.TellResult(row, column, Outcome.Kill, battleShip.Width, battleShip.Height);
-                    for (int i = battleShip.Row; i < battleShip.Row + battleShip.Height; i++)
-                        for (int j = battleShip.Column; j < battleShip.Column + battleShip.Width; j++)
-                            view.PaintCellByState(i, j, CellState.Kill, Player.First);
+                    computer.TellResult(battleShip.Row, battleShip.Column, Outcome.Kill, battleShip.Width, battleShip.Height);
+                    view.SetShipKilled(battleShip, Player.First);
                 }
             }
         }

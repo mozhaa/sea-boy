@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
 using Path = System.Windows.Shapes.Path;
+using Rectangle = System.Windows.Shapes.Rectangle;
 
 namespace sea_boy
 {
-    internal class GameBoard
+    public class GameBoard
     {
         private int Height = Presenter.rows;
         private int Width = Presenter.columns;
@@ -138,19 +141,32 @@ namespace sea_boy
                 Stroke = Palette[color]
             };
         }
+        private void AddElementToGrid(UIElement element, int row, int column)
+        {
+            Grid.SetRow(element, row);
+            Grid.SetColumn(element, column);
+            ParentGrid.Children.Add(element);
+        }
+        private void SetFigure(int row, int column, Path figure)
+        {
+            ParentGrid.Children.Remove(Board[row, column].Figure);
+            Board[row, column].Figure = figure;
+            AddElementToGrid(Board[row, column].Figure, row, column);
+        }
 
         public void SetCross(int row, int column, string color = "cross")
         {
-            Board[row, column].Figure = Cross(color);
+            SetFigure(row, column, Cross(color));
         }
 
         public void SetCircle(int row, int column, string color = "circle")
         {
-            Board[row, column].Figure = Circle(color);
+            SetFigure(row, column, Circle(color));
         }
 
         public void SetPoint(int row, int column, string color = "point")
         {
-            Board[row, column].Figure = Point(color);
+            SetFigure(row, column, Point(color));
         }
+    }
 }
