@@ -27,7 +27,7 @@ namespace sea_boy
             { "background", boardBackgroundColor },
             { "ship", battleshipColor },
             { "cover", Brushes.Transparent },
-            { "point", Brushes.PapayaWhip },
+            { "point", Brushes.LightBlue },
             { "circle", Brushes.MediumTurquoise },
             { "cross", Brushes.SteelBlue }
         };
@@ -36,7 +36,7 @@ namespace sea_boy
             { "background", Brushes.Lavender },
             { "ship", Brushes.Violet },
             { "cover", boardOpponentBackgroundColor },
-            { "point", Brushes.PeachPuff },
+            { "point", Brushes.Transparent },
             { "circle", Brushes.MediumOrchid },
             { "cross", Brushes.MediumVioletRed }
         };
@@ -45,7 +45,6 @@ namespace sea_boy
             { Player.First, playerPalette },
             { Player.Second, opponentPalette }
         };
-
     }
 
     /// <summary>

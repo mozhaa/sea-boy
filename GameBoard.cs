@@ -22,7 +22,7 @@ namespace sea_boy
         public struct CellStack
         {
             public Rectangle Background;
-            public Path Figure;
+            public UIElement Figure;
             public Rectangle Cover;
         }
 
@@ -100,7 +100,7 @@ namespace sea_boy
             Board[row, column].Cover.Fill = Brushes.Transparent;
         }
 
-        private Path Circle(string color)
+        private UIElement Circle(string color)
         {
             var scale = 0.8;
             var radiusX = (int)(Constants.tileWidth * scale / 2);
@@ -115,7 +115,7 @@ namespace sea_boy
             };
         }
 
-        private Path Cross(string color)
+        private UIElement Cross(string color)
         {
             var scale = 0.8;
             var radiusX = (int)(Constants.tileWidth * scale / 2);
@@ -130,16 +130,20 @@ namespace sea_boy
             };
         }
 
-        private Path Point(string color)
+        private UIElement Point(string color)
         {
-            var centerX = (int)(Constants.tileWidth / 2);
-            var centerY = (int)(Constants.tileHeight / 2);
-            return new Path()
+            var scale = 0.3;
+            var diameterX = (int)(Constants.tileWidth * scale);
+            var diameterY = (int)(Constants.tileHeight * scale);
+            return new Ellipse()
             {
-                Data = Geometry.Parse($"M {centerX - 1},{centerY} L {centerX + 1},{centerY}"),
-                StrokeThickness = 8,
-                Stroke = Palette[color]
+                Width = diameterY,
+                Height = diameterX,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Fill = Palette[color]
             };
+
         }
         private void AddElementToGrid(UIElement element, int row, int column)
         {
@@ -147,7 +151,7 @@ namespace sea_boy
             Grid.SetColumn(element, column);
             ParentGrid.Children.Add(element);
         }
-        private void SetFigure(int row, int column, Path figure)
+        private void SetFigure(int row, int column, UIElement figure)
         {
             ParentGrid.Children.Remove(Board[row, column].Figure);
             Board[row, column].Figure = figure;
