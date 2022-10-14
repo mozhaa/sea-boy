@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Buffers;
+using System.Collections.Generic;
 using System.IO.Packaging;
 using System.Windows;
 using System.Windows.Controls;
@@ -70,7 +71,7 @@ namespace sea_boy
         {
             presenter = new Presenter(this);
             InitializeComponent();
-
+            this.KeyDown += new KeyEventHandler(MainWindow_KeyR);
             shipCounterByType = new()
             {
                 { ShipType.s1x1, shipCounter1x1},
@@ -91,6 +92,14 @@ namespace sea_boy
                 BoardGrid.RowDefinitions.Add(new RowDefinition() { SharedSizeGroup = "CELL" });
             for (int i = 0; i < Presenter.columns; i++)
                 BoardGrid.ColumnDefinitions.Add(new ColumnDefinition() { SharedSizeGroup = "CELL" });
+        }
+
+        public void MainWindow_KeyR(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.R)
+            {
+                Board_MouseWheelEvent(sender, e);
+            }
         }
 
         public void Button1x1Click(object sender, RoutedEventArgs e)
