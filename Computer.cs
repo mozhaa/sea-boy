@@ -25,7 +25,6 @@ namespace sea_boy
     }
     internal class Computer
     {
-
         public CellState[,] board;
         private Random random = new Random();
         private Mode mode;
@@ -34,8 +33,8 @@ namespace sea_boy
         {
             board = new CellState[Presenter.rows, Presenter.columns];
             this.mode = mode;
-            for(int i = 0; i < Presenter.rows; i++)
-                for(int j = 0; j < Presenter.columns; j++)
+            for (int i = 0; i < Presenter.rows; i++)
+                for (int j = 0; j < Presenter.columns; j++)
                     board[i, j] = CellState.Unknown;
         }
 
@@ -80,9 +79,12 @@ namespace sea_boy
 
         private bool AroundNoShips(int row, int column)
         {
-            foreach ((int i, int j) in new List<(int, int)> { (-1, 0), (0, 1), (1, 0), (0, -1) })
+            var moves = new List<(int, int)> { (-1, 0), (0, 1), (1, 0), (0, -1) };
+
+            foreach ((int i, int j) in moves)
                 if (Valid(row + i, column + j) && (board[row + i, column + j] == CellState.Hit || board[row + i, column + j] == CellState.Kill))
                     return false;
+
             return true;
         }
 
@@ -93,16 +95,17 @@ namespace sea_boy
         private (int, int) NextIfHit(int row, int column)
         {
             (int, int) unknownCell = (row, column);
+
             foreach ((int i, int j) in new List<(int, int)> { (-1, 0), (0, 1), (1, 0), (0, -1) })
             {
                 if (Valid(row + i, column + j) && board[row + i, column + j] == CellState.Hit)
                     return NextInLineMove(row, column, i, j);
+
                 if (Valid(row + i, column + j) && board[row + i, column + j] == CellState.Unknown)
                     unknownCell = (row + i, column + j);
             }
-            if (unknownCell == (row, column))
-                return RandomMove();
-            return unknownCell;
+
+            return unknownCell == (row, column) ? RandomMove() : unknownCell;
         }
 
         private (int, int) NextInLineMove(int row, int column, int dx, int dy)
@@ -144,7 +147,7 @@ namespace sea_boy
             return RandomMove();
         }
 
-        public void TellResult(int row, int column, Outcome result, int width=1, int height=1)
+        public void TellResult(int row, int column, Outcome result, int width = 1, int height = 1)
         {
             switch (result)
             {
@@ -183,7 +186,7 @@ namespace sea_boy
                         battleShip = new BattleShip(shipType, row, column);
                         if (orientation)
                             battleShip.Rotate();
-                        if(Presenter.DoNotIntersectAndValidPositionByArray(newBoard, battleShip, row, column))
+                        if (Presenter.DoNotIntersectAndValidPositionByArray(newBoard, battleShip, row, column))
                             break;
                     }
                     for (int w = row; w < battleShip.Height + row; w++)

@@ -100,6 +100,14 @@ namespace sea_boy
             Board[row, column].Cover.Fill = Brushes.Transparent;
         }
 
+        public void SetCoverNoShips(int row, int column)
+        {
+            if (Board[row, column].Cover.Fill != Brushes.Transparent)
+            {
+                Board[row, column].Cover.Fill = Palette["noships"];
+            }
+        }
+
         private UIElement Circle(string color)
         {
             var scale = 0.8;

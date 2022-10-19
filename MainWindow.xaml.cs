@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Packaging;
 using System.Windows;
@@ -14,7 +15,7 @@ namespace sea_boy
     public class Constants
     {
         public static Brush boardBackgroundColor = Brushes.AliceBlue;
-        public static Brush boardOpponentBackgroundColor = Brushes.LightGray;
+        public static Brush boardOpponentBackgroundColor = Brushes.Silver;
         public static Brush battleshipColor = Brushes.Aqua;
         public static Brush possibleShipColor = Brushes.LightSeaGreen;
         public static Brush invalidPossibleShipColor = Brushes.MediumVioletRed;
@@ -30,7 +31,8 @@ namespace sea_boy
             { "cover", Brushes.Transparent },
             { "point", Brushes.LightBlue },
             { "circle", Brushes.MediumTurquoise },
-            { "cross", Brushes.SteelBlue }
+            { "cross", Brushes.SteelBlue },
+            { "noships", Brushes.Azure }
         };
         public static Dictionary<string, Brush> opponentPalette = new()
         {
@@ -39,7 +41,8 @@ namespace sea_boy
             { "cover", boardOpponentBackgroundColor },
             { "point", Brushes.Transparent },
             { "circle", Brushes.MediumOrchid },
-            { "cross", Brushes.MediumVioletRed }
+            { "cross", Brushes.MediumVioletRed },
+            { "noships", Brushes.LightGray }
         };
         public static Dictionary<Player, Dictionary<string, Brush>> PaletteByPlayer = new()
         {
@@ -233,8 +236,9 @@ namespace sea_boy
             int elemRow = Grid.GetRow(shipRectangle);
             int elemColumn = Grid.GetColumn(shipRectangle);
             FillBoardListWithRectangle(null, elemRow, elemColumn, height, width);
+            FillBoardArrayWithBattleShip(null, elemRow, elemColumn, height, width);
             Board.Children.Remove(shipRectangle);
-            IncreaseShipCounter(Presenter.typeBySize[(width, height)]);
+            IncreaseShipCounter(Presenter.GetType(width, height));
             presenter.SetCurrentShip(width, height, row, column);
             SetPossibleShip(width, height);
             HandleMouseMoveWheelOnBoardIfNotAlready();
@@ -250,8 +254,9 @@ namespace sea_boy
             int elemRow = Grid.GetRow(shipRectangle);
             int elemColumn = Grid.GetColumn(shipRectangle);
             FillBoardListWithRectangle(null, elemRow, elemColumn, height, width);
+            FillBoardArrayWithBattleShip(null, elemRow, elemColumn, height, width);
             Board.Children.Remove(shipRectangle);
-            IncreaseShipCounter(Presenter.typeBySize[(width, height)]);
+            IncreaseShipCounter(Presenter.GetType(width, height));
         }
 
         public void PutBattleShipOnBoard(BattleShip battleShip, int row, int column)
@@ -260,9 +265,17 @@ namespace sea_boy
             FillBoardListWithRectangle(shipRectangle, row, column, battleShip.Height, battleShip.Width);
             FillBoardArrayWithBattleShip(battleShip, row, column);
             DecreaseShipCounter(battleShip.Type);
-            PutAwayShipFromHand();
+            if (shipCounterByType[presenter.currentShip.Type].Number == 0)
+                PutAwayShipFromHand();
+            else
+            {
+                PutAwayShipFromHand();
+                presenter.SetCurrentShip(battleShip.Width, battleShip.Height, row, column);
+                SetPossibleShip(battleShip.Width, battleShip.Height);
+                HandleMouseMoveWheelOnBoardIfNotAlready();
+            }
         }
-
+        
         public void PutAwayShipFromHand()
         {
             Board.Children.Remove(possibleShip);
@@ -282,6 +295,13 @@ namespace sea_boy
         {
             for (int i = 0; i < battleShip.Height; i++)
                 for (int j = 0; j < battleShip.Width; j++)
+                    boardArray[row + i, column + j] = battleShip;
+        }
+
+        private void FillBoardArrayWithBattleShip(BattleShip? battleShip, int row, int column, int heigth, int width)
+        {
+            for (int i = 0; i < heigth; i++)
+                for (int j = 0; j < width; j++)
                     boardArray[row + i, column + j] = battleShip;
         }
 
@@ -477,6 +497,19 @@ namespace sea_boy
                 for (int j = battleShip.Column; j < battleShip.Column + battleShip.Width; j++)
                 {
                     ChangeCellStackByState(i, j, CellState.Kill, player);
+                }
+            }
+            for (int i = battleShip.Row - 1; i <= battleShip.Row + battleShip.Height; i++)
+            {
+                for (int j = battleShip.Column - 1; j <= battleShip.Column + battleShip.Width; j++)
+                {
+                    if (Presenter.IsValidCoordinate(i, j) && (i == battleShip.Row + battleShip.Height || 
+                                                              i == battleShip.Row - 1 ||
+                                                              j == battleShip.Column + battleShip.Width ||
+                                                              j == battleShip.Column - 1))
+                    {
+                        boardByPlayer[player].SetCoverNoShips(i, j);
+                    }
                 }
             }
         }

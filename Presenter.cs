@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -36,6 +37,11 @@ namespace sea_boy
         {
             this.view = view;
             isPlaying = true;
+        }
+
+        public static ShipType GetType(int width, int height)
+        {
+            return typeBySize[(Math.Min(width, height), Math.Max(width, height))];
         }
 
         public void SetCurrentShip(int width, int height, int row, int column)
